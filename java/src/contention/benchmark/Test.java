@@ -9,6 +9,7 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import contention.benchmark.ThreadLoops.*;
+import contention.benchmark.ThreadLoops.VS.StanfordVSFriendlyThreadLoop;
 import contention.benchmark.ThreadLoops.VS.StairsThreadLoop;
 
 /**
@@ -22,7 +23,7 @@ public class Test {
 	public static final String VERSION = "11-17-2014";
 
 	public enum Type {
-		INTSET, MAP, SORTEDSET, STAIRS
+		INTSET, MAP, SORTEDSET, STAIRS, StanfordVSFriendly
 	}
 
 	/**
@@ -98,6 +99,11 @@ public class Test {
 	};
 
 	public void fill(final int range, final long size) {
+		if (benchType == Type.StanfordVSFriendly) {
+			((StanfordVSFriendlyThreadLoop) threadLoops[0]).fill(size);
+			return;
+		}
+
 		for (long i = size; i > 0; ) {
 			int v = s_random.get().nextInt(range);
 			switch (benchType) {
@@ -107,7 +113,7 @@ public class Test {
 					}
 					break;
 				case MAP:
-				case STAIRS:
+				case STAIRS: //todo
 					if (mapBench.putIfAbsent(v, v) == null) {
 						i--;
 					}
@@ -198,6 +204,14 @@ public class Test {
 					threads[threadNum] = new Thread(threadLoops[threadNum]);
 				}
 				break;
+			case StanfordVSFriendly:
+				threadLoops = new StanfordVSFriendlyThreadLoop[Parameters.numThreads];
+				threads = new Thread[Parameters.numThreads];
+				for (short threadNum = 0; threadNum < Parameters.numThreads; threadNum++) {
+					threadLoops[threadNum] = new StanfordVSFriendlyThreadLoop(threadNum, mapBench, methods);
+					threads[threadNum] = new Thread(threadLoops[threadNum]);
+				}
+				break;
 		}
 	}
 
@@ -252,6 +266,7 @@ public class Test {
 				break;
 			case MAP:
 			case STAIRS:
+			case StanfordVSFriendly:
 				mapBench.clear();
 				break;
 			case SORTEDSET:
@@ -287,6 +302,7 @@ public class Test {
 			case INTSET:
 				assert test.setBench.size() == 0 : "Warmup corrupted the data structure, rerun with -W 0.";
 			case MAP:
+			case StanfordVSFriendly:
 			case STAIRS:
 				assert test.mapBench.size() == 0 : "Warmup corrupted the data structure, rerun with -W 0.";
 			case SORTEDSET:
@@ -359,6 +375,9 @@ public class Test {
 					Parameters.detailedStats = true;
 				} else if (currentArg.equals("--stairs")) {
 					benchType = Type.STAIRS;
+				} else if (currentArg.equals("--StanfordVSFriendly")
+						|| currentArg.equals("-vs-sf")) {
+					benchType = Type.StanfordVSFriendly;
 				} else {
 					String optionValue = args[argNumber++];
 					if (currentArg.equals("--thread-nums")
@@ -578,6 +597,7 @@ public class Test {
 				finalSize = setBench.size();
 				break;
 			case STAIRS:
+			case StanfordVSFriendly:
 			case MAP:
 				finalSize = mapBench.size();
 				break;
@@ -618,6 +638,7 @@ public class Test {
 				break;
 			case MAP:
 			case STAIRS:
+			case StanfordVSFriendly:
 				if (mapBench instanceof MaintenanceAlg) {
 					System.out.println("  #nodes (inc. deleted): \t"
 							+ ((MaintenanceAlg) mapBench).numNodes());
