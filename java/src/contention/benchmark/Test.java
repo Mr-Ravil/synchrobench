@@ -9,6 +9,7 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import contention.benchmark.ThreadLoops.*;
+import contention.benchmark.ThreadLoops.VS.StairsThreadLoop;
 
 /**
  * Synchrobench-java, a benchmark to evaluate the implementations of
@@ -21,7 +22,7 @@ public class Test {
 	public static final String VERSION = "11-17-2014";
 
 	public enum Type {
-	    INTSET, MAP, SORTEDSET
+		INTSET, MAP, SORTEDSET, STAIRS
 	}
 
 	/**
@@ -97,28 +98,29 @@ public class Test {
 	};
 
 	public void fill(final int range, final long size) {
-		for (long i = size; i > 0;) {
-			Integer v = s_random.get().nextInt(range);
-			switch(benchType) {
-			case INTSET:
-				if (setBench.addInt(v)) {
-					i--;
-				}
-				break;
-			case MAP:
-				if (mapBench.putIfAbsent((Integer) v, (Integer) v) == null) {
-					i--;
-				}	
-				break;
-			case SORTEDSET:
-				if (sortedBench.add((Integer) v)) {
-					i--;
-				}	
-				break;
-			default:
-				System.err.println("Wrong benchmark type");
-				System.exit(0);
-			}	
+		for (long i = size; i > 0; ) {
+			int v = s_random.get().nextInt(range);
+			switch (benchType) {
+				case INTSET:
+					if (setBench.addInt(v)) {
+						i--;
+					}
+					break;
+				case MAP:
+				case STAIRS:
+					if (mapBench.putIfAbsent(v, v) == null) {
+						i--;
+					}
+					break;
+				case SORTEDSET:
+					if (sortedBench.add(v)) {
+						i--;
+					}
+					break;
+				default:
+					System.err.println("Wrong benchmark type");
+					System.exit(0);
+			}
 		}
 	}
 
@@ -188,6 +190,14 @@ public class Test {
 					threads[threadNum] = new Thread(threadLoops[threadNum]);
 				}
 				break;
+			case STAIRS:
+				threadLoops = new StairsThreadLoop[Parameters.numThreads];
+				threads = new Thread[Parameters.numThreads];
+				for (short threadNum = 0; threadNum < Parameters.numThreads; threadNum++) {
+					threadLoops[threadNum] = new StairsThreadLoop(threadNum, mapBench, methods);
+					threads[threadNum] = new Thread(threadLoops[threadNum]);
+				}
+				break;
 		}
 	}
 
@@ -236,16 +246,17 @@ public class Test {
 	}
 
 	public void clear() {
-		switch(benchType) {
-		case INTSET:
-			setBench.clear();
-			break;
-		case MAP:
-			mapBench.clear();
-			break;
-		case SORTEDSET:
-			sortedBench.clear();
-			break;
+		switch (benchType) {
+			case INTSET:
+				setBench.clear();
+				break;
+			case MAP:
+			case STAIRS:
+				mapBench.clear();
+				break;
+			case SORTEDSET:
+				sortedBench.clear();
+				break;
 		}
 	}
 
@@ -276,6 +287,7 @@ public class Test {
 			case INTSET:
 				assert test.setBench.size() == 0 : "Warmup corrupted the data structure, rerun with -W 0.";
 			case MAP:
+			case STAIRS:
 				assert test.mapBench.size() == 0 : "Warmup corrupted the data structure, rerun with -W 0.";
 			case SORTEDSET:
 				assert test.sortedBench.size() == 0 : "Warmup corrupted the data structure, rerun with -W 0.";
@@ -345,6 +357,8 @@ public class Test {
 				} else if (currentArg.equals("--verbose")
 						|| currentArg.equals("-v")) {
 					Parameters.detailedStats = true;
+				} else if (currentArg.equals("--stairs")) {
+					benchType = Type.STAIRS;
 				} else {
 					String optionValue = args[argNumber++];
 					if (currentArg.equals("--thread-nums")
@@ -563,6 +577,7 @@ public class Test {
 			case INTSET:
 				finalSize = setBench.size();
 				break;
+			case STAIRS:
 			case MAP:
 				finalSize = mapBench.size();
 				break;
@@ -594,25 +609,26 @@ public class Test {
 		// .getBottomLevelRaiseCount());
 		// }
 
-		switch(benchType) {
-		case INTSET:
-			if (setBench instanceof MaintenanceAlg) {
-				System.out.println("  #nodes (inc. deleted): \t"
-						+ ((MaintenanceAlg) setBench).numNodes());
-			}
-			break;
-		case MAP:
-			if (mapBench instanceof MaintenanceAlg) {
-				System.out.println("  #nodes (inc. deleted): \t"
-						+ ((MaintenanceAlg) mapBench).numNodes());
-			}
-			break;
-		case SORTEDSET:
-			if (mapBench instanceof MaintenanceAlg) {
-				System.out.println("  #nodes (inc. deleted): \t"
-						+ ((MaintenanceAlg) sortedBench).numNodes());
-			}
-			break;
+		switch (benchType) {
+			case INTSET:
+				if (setBench instanceof MaintenanceAlg) {
+					System.out.println("  #nodes (inc. deleted): \t"
+							+ ((MaintenanceAlg) setBench).numNodes());
+				}
+				break;
+			case MAP:
+			case STAIRS:
+				if (mapBench instanceof MaintenanceAlg) {
+					System.out.println("  #nodes (inc. deleted): \t"
+							+ ((MaintenanceAlg) mapBench).numNodes());
+				}
+				break;
+			case SORTEDSET:
+				if (mapBench instanceof MaintenanceAlg) {
+					System.out.println("  #nodes (inc. deleted): \t"
+							+ ((MaintenanceAlg) sortedBench).numNodes());
+				}
+				break;
 		}
 
 	}
