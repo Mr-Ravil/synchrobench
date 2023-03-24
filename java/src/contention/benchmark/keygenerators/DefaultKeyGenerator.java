@@ -16,6 +16,8 @@ public class DefaultKeyGenerator implements KeyGenerator {
     }
 
     private int next() {
+        int index = distribution.next();
+        return data.get(index);
     }
 
     @Override
