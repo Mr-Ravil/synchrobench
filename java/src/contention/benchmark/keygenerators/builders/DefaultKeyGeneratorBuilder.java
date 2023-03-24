@@ -2,6 +2,7 @@ package contention.benchmark.keygenerators.builders;
 
 import contention.abstractions.KeyGenerator;
 import contention.abstractions.KeyGeneratorBuilder;
+import contention.abstractions.DistributionBuilder;
 import contention.benchmark.keygenerators.data.KeyGeneratorData;
 import contention.abstractions.Parameters;
 import contention.benchmark.keygenerators.DefaultKeyGenerator;
