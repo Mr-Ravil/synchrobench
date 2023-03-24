@@ -16,8 +16,6 @@ public class DefaultKeyGenerator implements KeyGenerator {
     }
 
     private int next() {
-        int index = distribution.next();
-        return data.get(index);
     }
 
     @Override
@@ -37,6 +35,7 @@ public class DefaultKeyGenerator implements KeyGenerator {
 
     @Override
     public int nextPrefill() {
-        return next();
+        int index = prefillDistribution.next();
+        return data.get(index);
     }
 }
