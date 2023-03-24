@@ -7,10 +7,12 @@ import contention.benchmark.keygenerators.data.KeyGeneratorData;
 public class DefaultKeyGenerator implements KeyGenerator {
     private final KeyGeneratorData data;
     private final Distribution distribution;
+    private final Distribution prefillDistribution;
 
-    public DefaultKeyGenerator(KeyGeneratorData data, Distribution distribution) {
+    public DefaultKeyGenerator(KeyGeneratorData data, Distribution distribution, Distribution prefillDistribution) {
         this.data = data;
         this.distribution = distribution;
+        this.prefillDistribution = prefillDistribution;
     }
 
     private int next() {

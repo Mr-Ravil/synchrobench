@@ -26,7 +26,8 @@ public class DefaultKeyGeneratorBuilder extends KeyGeneratorBuilder {
         for (short threadNum = 0; threadNum < parameters.numThreads; threadNum++) {
             keygens[threadNum] = new DefaultKeyGenerator(
                     data,
-                    parameters.distributionBuilder.getDistribution(parameters.range)
+                    parameters.distributionBuilder.getDistribution(parameters.range),
+                    new DistributionBuilder().getDistribution(parameters.range)
             );
         }
 
